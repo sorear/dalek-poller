@@ -1,0 +1,49 @@
+#! /usr/bin/env perl
+
+sub lprint {
+    print @_, "\n";
+}
+
+our %timers;
+open QUEUE, ">>", "queue";
+select QUEUE;
+$| = 1;
+select STDOUT;
+
+sub create_timer {
+    my ($name, $obj, $meth, $timeout) = @_;
+    lprint("creating timer $name");
+    $timers{$name} = sub {
+        lprint("Running timer $name");
+        eval { $obj->$meth };
+        lprint("Failed: $@") if $@;
+    };
+}
+
+sub delete_timer {
+    my ($name) = @_;
+    lprint("deleting timer $name");
+    delete $timers{$name};
+}
+
+sub send_privmsg {
+    my ($net, $to, $msg) = @_;
+    lprint("sending: $net $to $msg");
+    print QUEUE "$net $to $msg\n";
+}
+
+sub run_timers {
+    my @keys = keys %timers;
+    for (@keys) { $timers{$_}->() if exists $timers{$_} }
+}
+
+for my $mod (qw/ autofeed adhoc tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /) {
+    eval "require modules::local::$mod; modules::local::$mod->init";
+    print "$@\n" if $@;
+}
+
+while(1) {
+    run_timers;
+    lprint("sleeping...");
+    sleep(300);
+}
