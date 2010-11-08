@@ -12,27 +12,6 @@ use base 'modules::local::karmalog';
 
 my $url  = 'https://trac.parrot.org/parrot/timeline?ticket=on&format=rss';
 my $lastrev;
-my $copy_of_self;
-
-sub init {
-    my $self = shift;
-    $copy_of_self = $self;
-    main::lprint("parrot ticket RSS parser loaded.");
-    main::create_timer("parrotticketlog_fetch_feed_timer", $self, "fetch_feed", 181);
-}
-
-sub implements {
-    return qw();
-}
-
-sub shutdown {
-    my $self = shift;
-    main::delete_timer("parrotticketlog_fetch_feed_timer");
-}
-
-# upgrade this to an %objects_by_package if this ends up being subclassed.
-my $self = bless({ seen => {}, targets => [['magnet','#parrot']] }, __PACKAGE__);
-$$self{not_first_time} = 1 if exists $ENV{TEST_RSS_PARSER};
 
 sub fetch_feed {
     my $response = ::fetch_url($url);
@@ -50,21 +29,14 @@ sub process_feed {
     # skip the first run, to prevent new installs from flooding the channel
     foreach my $item (@items) {
         my $rev = $item->identifier;
-        if(exists($$self{not_first_time})) {
-            # output new entries to channel
-            next if exists($$self{seen}{$rev});
-            $$self{seen}{$rev} = 1;
-            $self->output_item($item);
-        } else {
-            $$self{seen}{$rev} = 1;
-        }
+        ::try_item(__PACKAGE__, "", [["magnet", "#parrot"]], $rev, $item);
     }
-    $$self{not_first_time} = 1;
+    ::mark_feed_started(__PACKAGE__, "");
 }
 
 
-sub output_item {
-    my ($self, $item) = @_;
+sub format_item {
+    my ($self, $feeedid, $rev, $item) = @_;
     my $user    = $item->creator;
     my $desc    = $item->title;
 
@@ -73,18 +45,18 @@ sub output_item {
     decode_entities($desc);
     if($desc =~ /^Ticket \#(\d+) \((.+)\) (\S+)\s*$/) {
         my ($ticket, $summary, $action) = ($1, $2, $3);
-        $self->emit_ticket_karma(
+        main::lprint("parrotticketlog: ticket $ticket $action");
+        return $self->format_ticket_karma(
             prefix  => 'TT #',
             ticket  => $ticket,
             action  => $action,
             user    => $user,
             summary => $summary,
-            targets => $$self{targets},
             url => "http://trac.parrot.org/parrot/ticket/$ticket"
         );
-        main::lprint("parrotticketlog: ticket $ticket $action");
     } else {
         main::lprint("parrotticketlog: regex failed on $desc");
+        return [];
     }
 }
 

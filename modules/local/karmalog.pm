@@ -190,6 +190,4 @@ sub format_ticket_karma {
            (defined($url) ? "$prefix$ticket: $url" : ())];
 }
 
-sub init { }
-
 1;

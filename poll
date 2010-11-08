@@ -8,7 +8,6 @@ sub lprint {
     print @_, "\n";
 }
 
-our %timers;
 open QUEUE, ">>", "queue";
 select QUEUE;
 $| = 1;
@@ -53,32 +52,16 @@ sub fetch_url {
     return undef;
 }
 
-sub create_timer {
-    my ($name, $obj, $meth, $timeout) = @_;
-    lprint("creating timer $name");
-    $timers{$name} = sub {
-        lprint("Running timer $name");
-        eval { $obj->$meth };
-        lprint("Failed: $@") if $@;
-    };
-}
-
-sub delete_timer {
-    my ($name) = @_;
-    lprint("deleting timer $name");
-    delete $timers{$name};
-}
-
 sub send_privmsg {
     my ($net, $to, $msg) = @_;
     lprint("sending: $net $to $msg");
     print QUEUE "$net $to $msg\n";
 }
 
-my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /;
+my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed tpfwikilog tracwikilog websitelog parrotticketlog /;
 for my $mod (@modules) {
     $mod = "modules::local::$mod";
-    eval "require $mod;"; die $@ if $@; $mod->init;
+    eval "require $mod;"; die $@ if $@;
     print "$@\n" if $@;
 }
 
@@ -120,8 +103,12 @@ sub run_timers {
             $_->fetch_metadata;
         }
     }
-    my @keys = keys %timers;
-    for (@keys) { $timers{$_}->() if exists $timers{$_} }
+    for (@modules) {
+        if (defined &{ "${_}::fetch_feed" }) {
+            lprint("*** running timers for for $_ ***");
+            eval { $_->fetch_feed }; print $@ if $@;
+        }
+    }
 }
 
 while(1) {

@@ -8,23 +8,6 @@ use HTML::Entities;
 
 my $url  = 'https://trac.parrot.org/parrot/timeline?wiki=on&format=rss';
 my $lastrev;
-my $copy_of_self;
-
-sub init {
-    my $self = shift;
-    $copy_of_self = $self;
-    main::lprint("tracwiki trac RSS parser loaded.");
-    main::create_timer("tracwikilog_fetch_feed_timer", $self, "fetch_feed", 182);
-}
-
-sub implements {
-    return qw();
-}
-
-sub shutdown {
-    my $self = shift;
-    main::delete_timer("tracwikilog_fetch_feed_timer");
-}
 
 sub fetch_feed {
     my $response = ::fetch_url($url);

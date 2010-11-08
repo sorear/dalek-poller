@@ -8,24 +8,10 @@ use HTML::Entities;
 my $url     = 'http://www.perlfoundation.org/feed/workspace/parrot?category=Recent%20Changes';
 my $lastpost;
 
-sub init {
-    my $self = shift;
-    main::create_timer("tpfwikilog_fetch_rss_timer", $self, "fetch_feed", 175);
-}
-
-sub implements {
-    return qw();
-}
-
 sub numify_ts {
     my ($ts) = shift;
     $ts =~ s/[-T:\+]//g;
     return $ts;
-}
-
-sub shutdown {
-    my $self = shift;
-    main::delete_timer("tpfwikilog_fetch_rss_timer");
 }
 
 sub fetch_feed {

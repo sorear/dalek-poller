@@ -7,27 +7,13 @@ use HTML::Entities;
 my $url     = 'http://www.parrot.org/rss.xml';
 my $lastpost;
 
-sub init {
-    my $self = shift;
-    main::create_timer("websitelog_fetch_rss_timer", $self, "fetch_rss", 178);
-}
-
-sub implements {
-    return qw();
-}
-
 sub numify_ts {
     my ($ts) = shift;
     $ts =~ s/[-T:\+]//g;
     return $ts;
 }
 
-sub shutdown {
-    my $self = shift;
-    main::delete_timer("websitelog_fetch_rss_timer");
-}
-
-sub fetch_rss {
+sub fetch_feed {
     my $response = ::fetch_url($url);
     if (defined $response) {
         my $rss = XML::RAI->parse_string($response);

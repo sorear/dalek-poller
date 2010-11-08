@@ -8,8 +8,6 @@ use modules::local::githubparser;
 use modules::local::gitoriousparser;
 use modules::local::googlecodeparser;
 
-sub init { }
-
 # Note: Please make sure you put links to raw JSON files here, not the pretty
 # html versions that github generates.
 my @json = (
@@ -105,12 +103,7 @@ sub add_target {
     main::lprint("autofeed ($pkg): $feedid will output to ".join("/",@$target));
 }
 
-sub init {
-    my $self = shift;
-    ::create_timer("autofeed_timer", $self, "process_feed", 300);
-}
-
-sub process_feed {
+sub fetch_feed {
     my $self = shift;
 
     for my $pkg (sort keys %feeds) {
