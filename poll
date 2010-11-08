@@ -1,5 +1,7 @@
 #! /usr/bin/env perl
 
+use LWP::UserAgent;
+
 sub lprint {
     print @_, "\n";
 }
@@ -9,6 +11,29 @@ open QUEUE, ">>", "queue";
 select QUEUE;
 $| = 1;
 select STDOUT;
+
+=head2 fetch_url
+
+    my $pagedata = ::fetch_url($url);
+
+Fetch the data using a 10 second timeout.  Return undef if an error or timeout
+was encountered.
+
+=cut
+
+my $lwp = LWP::UserAgent->new();
+$lwp->timeout(10);
+$lwp->env_proxy();
+
+sub fetch_url {
+    my ($url) = @_;
+    my $response = $lwp->get($url);
+    if($response->is_success) {
+        return $response->content;
+    }
+    main::lprint("fetch_url: failure fetching $url: " . $response->status_line);
+    return undef;
+}
 
 sub create_timer {
     my ($name, $obj, $meth, $timeout) = @_;

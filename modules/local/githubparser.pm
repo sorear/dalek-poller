@@ -369,15 +369,11 @@ undef on error.
 
 =cut
 
-my $lwp = LWP::UserAgent->new();
-$lwp->timeout(60);
-$lwp->env_proxy();
-
 sub get_yaml {
     my $url = shift;
-    my $response = $lwp->get($url);
-    if($response->is_success) {
-        my $rv = Load($response->content);
+    my $response = ::fetch_url($url);
+    if (defined $response) {
+        my $rv = Load($response);
         return $rv;
     }
     return undef;

@@ -1,7 +1,6 @@
 package modules::local::tpfwikilog;
 use strict;
 use warnings;
-use LWP::UserAgent;
 use XML::RAI;
 use HTML::Entities;
 #XML::RAI::Item->add_mapping('branch', qw(dc:branch));
@@ -29,17 +28,11 @@ sub shutdown {
     main::delete_timer("tpfwikilog_fetch_rss_timer");
 }
 
-my $lwp = LWP::UserAgent->new();
-$lwp->timeout(10);
-$lwp->env_proxy();
-
 sub fetch_feed {
-    my $response = $lwp->get($url);
-    if($response->is_success) {
-        my $rss = XML::RAI->parse_string($response->content);
+    my $response = ::fetch_url($url);
+    if(defined $response) {
+        my $rss = XML::RAI->parse_string($response);
         process_feed($rss);
-    } else {
-        main::lprint("tpfwikilog: fetch_rss: failure fetching $url");
     }
 }
 

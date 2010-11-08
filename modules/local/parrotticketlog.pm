@@ -3,11 +3,8 @@ use strict;
 use warnings;
 use utf8;
 
-use LWP::UserAgent;
 use XML::RAI;
 use HTML::Entities;
-use WWW::Shorten::Metamark;
-use WWW::Shorten 'Metamark';
 
 use base 'modules::local::karmalog';
 
@@ -33,20 +30,15 @@ sub shutdown {
     main::delete_timer("parrotticketlog_fetch_feed_timer");
 }
 
-my $lwp = LWP::UserAgent->new();
-$lwp->timeout(60);
-$lwp->env_proxy();
 # upgrade this to an %objects_by_package if this ends up being subclassed.
 my $self = bless({ seen => {}, targets => [['magnet','#parrot']] }, __PACKAGE__);
 $$self{not_first_time} = 1 if exists $ENV{TEST_RSS_PARSER};
 
 sub fetch_feed {
-    my $response = $lwp->get($url);
-    if($response->is_success) {
-        my $feed = XML::RAI->parse_string($response->content);
+    my $response = ::fetch_url($url);
+    if (defined $response) {
+        my $feed = XML::RAI->parse_string($response);
         process_feed($feed);
-    } else {
-        main::lprint("parrotticketlog: fetch_feed: failure fetching $url");
     }
 }
 

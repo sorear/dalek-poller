@@ -2,7 +2,6 @@ package modules::local::autofeed;
 use strict;
 use warnings;
 
-use LWP::UserAgent;
 use JSON;
 
 use modules::local::githubparser;
@@ -123,7 +122,7 @@ field is mandatory.  Any other fields are ignored at present.
 sub parse_pages {
     my $package = shift;
     foreach my $link (@json) {
-        my $content = $package->fetch_url($link);
+        my $content = ::fetch_url($link);
         next unless defined $content;
         my $json;
         eval { $json = decode_json($content); };
@@ -169,7 +168,7 @@ promise.
 sub scrape_pages {
     my $package = shift;
     foreach my $url (@scrape) {
-        my $content = $package->fetch_url($url);
+        my $content = ::fetch_url($url);
         next unless defined $content;
         # this is nasty but straight-forward.
         my @links = split(/<tr[^>]*><td[^>]*><a(?: class=\S+) href="/, $content);
@@ -203,42 +202,6 @@ sub try_link {
     # "branches" argument not currently supported for gitorious and googlecode.
     return modules::local::gitoriousparser->try_link($url, $target) if $url =~ /gitorious/;
     return modules::local::googlecodeparser->try_link($url, $target) if $url =~ /google/;
-}
-
-
-=head2 fetch_url
-
-    my $pagedata = $self->fetch_url($url);
-
-Fetch the data using a 30 second timeout.  Return undef if an error or timeout
-was encountered.
-
-=cut
-
-my $lwp = LWP::UserAgent->new();
-$lwp->timeout(10);
-$lwp->env_proxy();
-
-sub fetch_url {
-    my ($self, $url) = @_;
-    my $response = $lwp->get($url);
-    if($response->is_success) {
-        return $response->content;
-    }
-    main::lprint("autofeed: fetch_url: failure fetching $url: " . $response->status_line);
-    return undef;
-}
-
-
-=head2 implements
-
-This is a pseudo-method called by botnix to determine which event callbacks
-this module supports.  Returns an empty array.
-
-=cut
-
-sub implements {
-    return qw();
 }
 
 1;

@@ -1,11 +1,8 @@
 package modules::local::tracwikilog;
 use strict;
 use warnings;
-use LWP::UserAgent;
 use XML::RAI;
 use HTML::Entities;
-use WWW::Shorten::Metamark;
-use WWW::Shorten 'Metamark';
 
 # Parse RSS generated from trac's "revision log" page.
 
@@ -29,17 +26,11 @@ sub shutdown {
     main::delete_timer("tracwikilog_fetch_feed_timer");
 }
 
-my $lwp = LWP::UserAgent->new();
-$lwp->timeout(30);
-$lwp->env_proxy();
-
 sub fetch_feed {
-    my $response = $lwp->get($url);
-    if($response->is_success) {
-        my $feed = XML::RAI->parse_string($response->content);
+    my $response = ::fetch_url($url);
+    if (defined $response) {
+        my $feed = XML::RAI->parse_string($response);
         process_feed($feed);
-    } else {
-        main::lprint("tracwikilog: fetch_feed: failure fetching $url");
     }
 }
 

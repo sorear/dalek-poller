@@ -2,8 +2,6 @@ package modules::local::karmalog;
 use strict;
 use warnings;
 
-use LWP::UserAgent;
-
 my $url = 'https://svn.parrot.org/parrot/trunk/CREDITS';
 
 =head1 NAME
@@ -60,7 +58,7 @@ Grab the CREDITS file, call parse_credits() with the result.
 
 sub scrape_credits {
     my $package = shift;
-    my $credits = $package->fetch_url($url);
+    my $credits = ::fetch_url($url);
     $package->parse_credits($credits) if defined $credits;
 }
 
@@ -218,30 +216,6 @@ sub put {
     foreach my $target (@$targets) {
         main::send_privmsg(@$target, $line);
     }
-}
-
-
-=head2 fetch_url
-
-    my $pagedata = $self->fetch_url($url);
-
-Fetch the data using a 30 second timeout.  Return undef if an error or timeout
-was encountered.
-
-=cut
-
-my $lwp = LWP::UserAgent->new();
-$lwp->timeout(10);
-$lwp->env_proxy();
-
-sub fetch_url {
-    my ($self, $url) = @_;
-    my $response = $lwp->get($url);
-    if($response->is_success) {
-        return $response->content;
-    }
-    main::lprint("autofeed: fetch_url: failure fetching $url");
-    return undef;
 }
 
 

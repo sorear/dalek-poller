@@ -221,7 +221,7 @@ sub output_item {
         $link = "http://gitorious.org$link"
             unless $link =~ m,^https?://,;
 
-        my $patch = $self->fetch_url("$link.patch");
+        my $patch = ::fetch_url("$link.patch");
         my (@tmp, @log, @files, $this);
         @tmp = split(/\n+/, $patch);
         while(defined($this = shift(@tmp))) {
