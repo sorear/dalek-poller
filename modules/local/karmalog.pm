@@ -2,7 +2,7 @@ package modules::local::karmalog;
 use strict;
 use warnings;
 
-my $url = 'https://svn.parrot.org/parrot/trunk/CREDITS';
+my $url = 'https://github.com/parrot/parrot/raw/master/CREDITS';
 
 =head1 NAME
 
