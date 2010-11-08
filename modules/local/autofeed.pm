@@ -10,6 +10,8 @@ use modules::local::googlecodeparser;
 #use modules::local::tracparser;
 #use modules::local::bitbucketparser;
 
+sub init { }
+
 my @scrape = (
     'https://trac.parrot.org/parrot/wiki/Languages',
     'https://trac.parrot.org/parrot/wiki/Modules',
@@ -52,33 +54,16 @@ git repos, the "master" branch is always used.
 
 =head1 METHODS
 
-=head2 init
+=head2 fetch_metadata
 
-This is a pseudo-method called by botnix when the module is first loaded.  It
-starts the ball rolling.  This method has two effects:
-
-    * Scans for links once.
-    * Starts a timer thread which rescans again, once every hour.
-
-=cut
-
-sub init {
-    my $self = shift;
-    $self->recheck_pages();
-    main::create_timer('autofeed_timer', $self, 'recheck_pages', 60*60);
-}
-
-
-=head2 recheck_pages
-
-    $self->recheck_pages();
+    $self->fetch_metadata();
 
 This calls scrape_pages and parse_pages to parse URLs from html and from json,
 respectively.  This is the top level timer callback function.
 
 =cut
 
-sub recheck_pages {
+sub fetch_metadata {
     my $package = shift;
     $package->parse_pages();
     $package->scrape_pages();

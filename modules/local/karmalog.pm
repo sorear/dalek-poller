@@ -31,32 +31,13 @@ It should understand that commits under the username "wcoleda" are aliased to
 
 =head1 METHODS
 
-=head2 init
+=head2 fetch_metadata
 
-This is a pseudo-method called by botnix when the module is first loaded.  It
-starts the ball rolling.  This method has two effects:
-
-    * Scans the CREDITS file once.
-    * Starts a timer thread which rescans again, once every 3 hours.
+Called by the core. Grab the CREDITS file, call parse_credits() with the result.
 
 =cut
 
-sub init {
-    my $self = shift;
-    $self->scrape_credits();
-    main::create_timer('scrape_CREDITS', $self, 'scrape_credits', 60*60*3);
-}
-
-
-=head2 scrape_credits
-
-    $self->scrape_credits();
-
-Grab the CREDITS file, call parse_credits() with the result.
-
-=cut
-
-sub scrape_credits {
+sub fetch_metadata {
     my $package = shift;
     my $credits = ::fetch_url($url);
     $package->parse_credits($credits) if defined $credits;
@@ -218,16 +199,6 @@ sub put {
     }
 }
 
-
-=head2 implements
-
-This is a pseudo-method called by botnix to determine which event callbacks
-this module supports.  Returns an empty array.
-
-=cut
-
-sub implements {
-    return qw();
-}
+sub init { }
 
 1;

@@ -1,5 +1,7 @@
 #! /usr/bin/env perl
 
+use warnings;
+use strict;
 use LWP::UserAgent;
 
 sub lprint {
@@ -57,14 +59,22 @@ sub send_privmsg {
     print QUEUE "$net $to $msg\n";
 }
 
-sub run_timers {
-    my @keys = keys %timers;
-    for (@keys) { $timers{$_}->() if exists $timers{$_} }
+my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed adhoc tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /;
+for my $mod (@modules) {
+    $mod = "modules::local::$mod";
+    eval "require $mod;"; $mod->init;
+    print "$@\n" if $@;
 }
 
-for my $mod (qw/ autofeed adhoc tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /) {
-    eval "require modules::local::$mod; modules::local::$mod->init";
-    print "$@\n" if $@;
+sub run_timers {
+    for (@modules) {
+        if (defined &{ "${_}::fetch_metadata" }) {
+            lprint("*** fetching metadata for $_ ***");
+            $_->fetch_metadata;
+        }
+    }
+    my @keys = keys %timers;
+    for (@keys) { $timers{$_}->() if exists $timers{$_} }
 }
 
 while(1) {
