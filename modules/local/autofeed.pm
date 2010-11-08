@@ -67,8 +67,13 @@ field is mandatory.  Any other fields are ignored at present.
 
 =cut
 
+our %feeds;
+
 sub fetch_metadata {
     my $package = shift;
+
+    %feeds = ();
+
     foreach my $link (@json) {
         my $content = ::fetch_url($link);
         next unless defined $content;
@@ -85,6 +90,33 @@ sub fetch_metadata {
             next unless scalar @$channels;
             next unless scalar $branches;
             $package->try_link($url, $channels, $branches);
+        }
+    }
+}
+
+sub add_target {
+    my ($self, $pkg, $feedid, $target) = @_;
+
+    foreach my $this (@{$feeds{$pkg}{$feedid}}) {
+        return if ($$target[0] eq $$this[0] && $$target[1] eq $$this[1]);
+    }
+
+    push @{$feeds{$pkg}{$feedid}}, $target;
+    main::lprint("autofeed ($pkg): $feedid will output to ".join("/",@$target));
+}
+
+sub init {
+    my $self = shift;
+    ::create_timer("autofeed_timer", $self, "process_feed", 300);
+}
+
+sub process_feed {
+    my $self = shift;
+
+    for my $pkg (sort keys %feeds) {
+        for my $feedid (sort keys %{ $feeds{$pkg} }) {
+            main::lprint("autofeed ($pkg - $feedid): fetching");
+            $pkg->process_feed($feedid, $feeds{$pkg}{$feedid});
         }
     }
 }
@@ -107,10 +139,17 @@ sub try_link {
     $url =~ s|http://github|https://github|;
     $backend = "googlecode" if $backend eq "google";
     $backend = "modules::local::" . $backend . "parser";
-    $targets //= [[ "magnet", "#parrot" ]];
+    $targets  //= [[ "magnet", "#parrot" ]];
     $branches //= ["master"];
 
-    $backend->try_link($url, $_, $branches) for @$targets;
+    for my $b (@$branches) {
+        my $feedid = $backend->parse_url($url, $b);
+        return unless defined $feedid;
+
+        for my $t (@$targets) {
+            $package->add_target($backend, $feedid, $t);
+        }
+    }
 }
 
 1;

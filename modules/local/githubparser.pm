@@ -18,51 +18,19 @@ is also knowledgeable enough about github's URL schemes to be able to recognise
 repository URLs, extract the project name/owner/path and generate ATOM feed
 URLs.
 
-This is a base class, there is one subclass per tracked project.  For each
-subclass, it keeps track of which branches are being tracked, and for each
-branch, which channels to emit updates.
-
-=cut
-
-
-# When new feeds are configured, this number  is incremented and added to the
-# base timer interval in an attempt to stagger their occurance in time.
-our $feed_number = 1;
-
-# This object tracks what feeds githubparser is following.  In pseudo-YAML,
-# the layout looks like:
-# rakudo/rakudo/master: [ [ "magnet", "#parrot" ], [ "freenode", "#perl6" ] ]
-our %feeds;
-
 =head1 METHODS
-
-=head2 process_project
-
-This is a pseudomethod called as a timer callback.  It enumerates the branches,
-calling process_branch() for each.
-
-=cut
-
-sub process_project {
-    my $self = shift;
-    foreach my $feed (sort keys %feeds) {
-        $self->process_branch($feed);
-        ::mark_feed_started(__PACKAGE__, $feed);
-    }
-}
-
 
 =head2 process_branch
 
-    $self->process_branch($feed);
+    $self->process_branch($feed, $targets);
 
 Fetches the ATOM feed for the 
 Enumerates the commits in the feed, emitting any events it hasn't seen before.
 
 =cut
 
-sub process_branch {
-    my ($self, $feedid) = @_;
+sub process_feed {
+    my ($self, $feedid, $targets) = @_;
 
     my ($author, $project, $branchname) = split '/', $feedid, 3;
     my $url = "https://github.com/api/v2/yaml/commits/list/$author/$project/$branchname";
@@ -80,8 +48,9 @@ sub process_branch {
     my $latest = $$newest{committed_date};
 
     foreach my $item (@items) {
-        ::try_item($self, $feedid, $feeds{$feedid}, $$item{id}, $item);
+        ::try_item($self, $feedid, $targets, $$item{id}, $item);
     }
+    ::mark_feed_started(__PACKAGE__, $feedid);
 }
 
 =head2 try_link
@@ -96,17 +65,6 @@ This is called by autofeed.pm.  Given a github.com URL, try to determine the
 project name and canonical path.  Then configure a feed reader for it if one
 doesn't already exist.
 
-The array reference containing network and channel are optional.  If not
-specified, magnet/#parrot is assumed.  If the feed already exists but didn't
-have the specified target, the existing feed is extended.  Similarly, if the
-feed already existed but didn't have the specified branch, the existing feed
-is extended.
-
-The array reference containing branch names are also optional.  However,
-to prevent ambiguity, you must also specify the network/channel in this case.
-Branches is an optional array reference containing the branches to be
-monitored, and defaults to C<[qw(master)]>.
-
 Currently supports 3 URL formats:
 
     https://github.com/tene/gil/
@@ -118,10 +76,8 @@ links on the Languages page at time of writing.
 
 =cut
 
-sub try_link {
-    my ($pkg, $url, $target, $branches) = @_;
-    $target   //= ['magnet', '#parrot'];
-    $branches //= ['master'];
+sub parse_url {
+    my ($pkg, $url, $branch) = @_;
 
     my($author, $project);
     if($url =~ m|https://(?:wiki.)?github.com/([^/]+)/([^/]+)/?|) {
@@ -136,23 +92,7 @@ sub try_link {
         return;
     }
 
-    $pkg->add_target("$author/$project/$_", $target) for @$branches;
-}
-
-sub add_target {
-    my ($self, $feedid, $target) = @_;
-
-    foreach my $this (@{$feeds{$feedid}}) {
-        return if ($$target[0] eq $$this[0] && $$target[1] eq $$this[1]);
-    }
-
-    push @{$feeds{$feedid}}, $target;
-    main::lprint("github: $feedid will output to ".join("/",@$target));
-}
-
-sub init {
-    my $self = shift;
-    ::create_timer("github_timer", $self, "process_project", 300);
+    return "$author/$project/$branch";
 }
 
 =head2 output_item
@@ -220,8 +160,7 @@ sub format_item {
         user    => $creator,
         log     => \@lines,
         link    => $link,
-        prefix  => $prefix,
-        targets => $feeds{$feedid},
+        prefix  => $prefix
     );
 }
 
