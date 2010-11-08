@@ -62,8 +62,39 @@ sub send_privmsg {
 my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed adhoc tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /;
 for my $mod (@modules) {
     $mod = "modules::local::$mod";
-    eval "require $mod;"; $mod->init;
+    eval "require $mod;"; die $@ if $@; $mod->init;
     print "$@\n" if $@;
+}
+
+my %seen;
+my %started;
+
+sub put {
+    my ($targets, @lines) = @_;
+    for my $target (@$targets) {
+        for my $line (@lines) {
+            send_privmsg(@$target, $line);
+        }
+    }
+}
+
+sub try_item {
+    my ($pkg, $feedid, $targets, $commit, $token) = @_;
+
+    if ($seen{$pkg}{$feedid}{$commit}++) {
+    } else {
+        if (!$started{$pkg}{$feedid}) {
+            # Bootstrap *quietly*
+        } else {
+            lprint("Reporting $pkg - $feedid - $commit");
+            put($targets, @{ $pkg->format_item($feedid, $commit, $token) });
+        }
+    }
+}
+
+sub mark_feed_started {
+    my ($pkg, $feedid) = @_;
+    lprint("Marking $pkg - $feedid started") unless $started{$pkg}{$feedid}++;
 }
 
 sub run_timers {

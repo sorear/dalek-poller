@@ -128,6 +128,11 @@ feedname: review: http://link/to/googlecode/diff/page
 
 sub emit_karma_message {
     my ($self, %args) = @_;
+    ::put($args{targets}, @{ $self->format_karma_message(%args) });
+}
+
+sub format_karma_message {
+    my ($self, %args) = @_;
     my $user = $args{user};
     my $feed = $args{feed};
     my $rev  = $args{rev};
@@ -137,14 +142,11 @@ sub emit_karma_message {
     $user = "($user)" if $user =~ / /;
     $end  = "/" unless defined $end;
     $end .= ':' if(defined($args{log}) || defined($args{link}));
-    $self->put($args{targets}, "$feed: $rev | $user++ | $end");
-    if(defined($args{log})) {
-        foreach my $line (@{$args{log}}) {
-            $self->put($args{targets}, "$feed: $line");
-        }
-    }
-    $self->put($args{targets}, "$feed: review: " . $args{link})
-        if defined $args{link};
+    my @put;
+    push @put, "$rev | $user++ | $end";
+    push @put, @{ $args{log} // [] };
+    push @put, "review: " . $args{link} if defined $args{link};
+    return [ map { "$feed: $_" } @put ];
 }
 
 
@@ -169,6 +171,11 @@ TT #699 closed by jkeenan++: manifest_tests Makefile target does not work in rel
 
 sub emit_ticket_karma {
     my ($self, %args) = @_;
+    ::put($args{targets}, @{ $self->format_ticket_karma(%args) });
+}
+
+sub format_ticket_karma {
+    my ($self, %args) = @_;
     my $prefix  = $args{prefix};
     my $ticket  = $args{ticket};
     my $user    = $args{user};
@@ -179,24 +186,8 @@ sub emit_ticket_karma {
     $summary    = ""         unless defined $summary;
     $prefix     = "Ticket #" unless defined $prefix;
     $user       = $aliases{$user} if exists $aliases{$user};
-    $self->put($args{targets}, "$prefix$ticket $action by $user++: $summary");
-    $self->put($args{targets}, "$prefix$ticket: $url") if defined $url;
-}
-
-
-=head2 put
-
-    $self->put($targets, $line);
-
-Output a line of text to the specified list of targets.
-
-=cut
-
-sub put {
-    my ($self, $targets, $line) = @_;
-    foreach my $target (@$targets) {
-        main::send_privmsg(@$target, $line);
-    }
+    return ["$prefix$ticket $action by $user++: $summary",
+           (defined($url) ? "$prefix$ticket: $url" : ())];
 }
 
 sub init { }
