@@ -84,24 +84,6 @@ sub process_branch {
     }
 }
 
-=head2 longest_common_prefix
-
-    my $prefix = longest_common_prefix(@files);
-
-Given a list of filenames, like ("src/ops/perl6.ops", "src/classes/IO.pir"),
-returns the common prefix portion.  For the example I just gave, the common
-prefix would be "src/".
-=cut
-
-sub longest_common_prefix {
-    my $prefix = shift;
-    for (@_) {
-        chop $prefix while (! /^\Q$prefix\E/);
-    }
-    return $prefix;
-}
-
-
 =head2 try_link
 
     modules::local::githubparser->try_link(
@@ -213,7 +195,7 @@ sub format_item {
         @files = map { $$_{filename} } (@{$$commit{modified}});
         @files = (@files, @{$$commit{added}})   if exists $$commit{added};
         @files = (@files, @{$$commit{removed}}) if exists $$commit{removed};
-        $prefix = longest_common_prefix(@files);
+        $prefix = ::longest_common_prefix(@files);
         if(defined($prefix) && length($prefix)) {
             # cut off the leading slash.
             $prefix =~ s|^/||;

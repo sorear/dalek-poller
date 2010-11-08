@@ -21,16 +21,7 @@ This is very similar to, and heavily based on, modules::local::githubparser.
 
 =cut
 
-
-# When new feeds are configured, this number  is incremented and added to the
-# base timer interval in an attempt to stagger their occurance in time.
-our $feed_number = 1;
-
-# This is a map of $self objects.  Because botnix does not use full class
-# instances and instead calls package::name->function() to call methods, the
-# actual OO storage for those modules ends up in here.
-our %objects_by_package;
-
+our %feeds;
 
 =head1 METHODS
 
@@ -46,11 +37,14 @@ function name to a real $self object (stored in %objects_by_package).
 =cut
 
 sub fetch_feed {
-    my $pkg  = shift;
-    my $self = $objects_by_package{$pkg};
-    my $atom = XML::Atom::Client->new();
-    my $feed = $atom->getFeed($$self{url});
-    $pkg->process_feed($feed);
+    my $self = shift;
+    for my $project (sort keys %feeds) {
+        my $link = "http://code.google.com/feeds/p/$project/svnchanges/basic";
+        my $atom = XML::Atom::Client->new();
+        my $feed = $atom->getFeed($link);
+        $self->process_feed($project, $feed);
+        ::mark_feed_started(__PACKAGE__, $project);
+    }
 }
 
 
@@ -72,42 +66,17 @@ events.
 =cut
 
 sub process_feed {
-    my ($pkg, $feed) = @_;
-    my $self = $objects_by_package{$pkg};
+    my ($self, $project, $feed) = @_;
     my @items = $feed->entries;
     @items = sort { $a->updated cmp $b->updated } @items; # ascending order
     my $newest = $items[-1];
     my $latest = $newest->updated;
 
-    # skip the first run, to prevent new installs from flooding the channel
-    if(defined($$self{lastrev})) {
-        # output new entries to channel
-        foreach my $item (@items) {
-            my $updated = $item->updated;
-            $self->output_item($item) if $updated gt $$self{lastrev};
-        }
+    foreach my $item (@items) {
+        my ($rev)   = $item->link->href =~ m|\?r=([0-9]+)|;
+        ::try_item($self, $project, $feeds{$project}, $rev, $item);
     }
-    $$self{lastrev} = $latest;
 }
-
-
-=head2 longest_common_prefix
-
-    my $prefix = longest_common_prefix(@files);
-
-Given a list of filenames, like ("src/ops/perl6.ops", "src/classes/IO.pir"),
-returns the common prefix portion.  For the example I just gave, the common
-prefix would be "src/".
-=cut
-
-sub longest_common_prefix {
-    my $prefix = shift;
-    for (@_) {
-        chop $prefix while (! /^\Q$prefix\E/);
-    }
-    return $prefix;
-}
-
 
 =head2 try_link
 
@@ -144,38 +113,19 @@ sub try_link {
         return;
     }
 
-    my $parsername = $projectname . "log";
-    my $modulename = "modules::local::" . $parsername;
-    $modulename =~ s/-/_/g;
-    if(exists($objects_by_package{$modulename})) {
-        # extend existing feed if necessary
-        my $self = $objects_by_package{$modulename};
-        my $already_have_target = 0;
-        foreach my $this (@{$$self{targets}}) {
-            $already_have_target++
-                if($$target[0] eq $$this[0] && $$target[1] eq $$this[1]);
-        }
-        push(@{$$self{targets}}, $target) unless $already_have_target;
-        return;
+    my $array = ($feeds{$projectname} //= []);
+    foreach my $this (@$array) {
+        return if($$target[0] eq $$this[0] && $$target[1] eq $$this[1]);
     }
+    push @$array, $target;
 
-    # create new feed
-    # url, feed_name, targets, objects_by_package
-    my $rss_link = "http://code.google.com/feeds/p/$projectname/svnchanges/basic";
-    my $self = {
-        url        => $rss_link,
-        feed_name  => $projectname,
-        modulename => $modulename,
-        targets    => [ $target ],
-    };
-    # create a dynamic subclass to get the timer callback back to us
-    eval "package $modulename; use base 'modules::local::googlecodeparser';";
-    $objects_by_package{$modulename} = bless($self, $modulename);
-    main::lprint("$parsername google code ATOM parser autoloaded.");
-    main::create_timer($parsername."_fetch_feed_timer", $modulename,
-        "fetch_feed", 260 + $feed_number++);
+    main::lprint("$projectname google code ATOM parser autoloaded.");
 }
 
+sub init {
+    main::create_timer("googlecode_fetch_feed_timer", __PACKAGE__,
+        "fetch_feed", 260);
+}
 
 =head2 output_item
 
@@ -192,8 +142,8 @@ feedname: review: http://link/to/googlecode/diff/page
 
 =cut
 
-sub output_item {
-    my ($self, $item) = @_;
+sub format_item {
+    my ($self, $feedid, $rev, $item) = @_;
     my $prefix  = 'unknown';
     my $creator = $item->author->name;
     my $link    = $item->link->href;
@@ -201,7 +151,6 @@ sub output_item {
 
     $creator = "($creator)" if($creator =~ /\s/);
 
-    my ($rev)   = $link =~ m|\?r=([0-9]+)|;
     my $log;
     decode_entities($desc);
     $desc =~ s/^\s+//s;   # leading whitespace
@@ -229,7 +178,7 @@ sub output_item {
     $log = join("\n", @lines);
     $log =~ s/^\s+//;
 
-    $prefix =  longest_common_prefix(@files);
+    $prefix =  ::longest_common_prefix(@files);
     $prefix =~ s|^/||;      # cut off the leading slash
     if(scalar @files > 1) {
         $prefix .= " (" . scalar(@files) . " files)";
@@ -239,42 +188,15 @@ sub output_item {
     decode_entities($log);
     my @log_lines = split(/[\r\n]+/, $log);
 
-    $self->emit_karma_message(
-        feed    => $$self{feed_name},
+    main::lprint("$feedid: output_item: output rev $rev");
+    $self->format_karma_message(
+        feed    => $feedid,
         rev     => "r$rev",
         user    => $creator,
         log     => \@log_lines,
         link    => $link,
         prefix  => $prefix,
-        targets => $$self{targets},
     );
-    main::lprint($$self{feed_name}.": output_item: output rev $rev");
-}
-
-
-=head2 implements
-
-This is a pseudo-method called by botnix to determine which event callbacks
-this module supports.  It is only called when explicitly subclassed (rakudo
-does this).  Returns an empty array.
-
-=cut
-
-sub implements {
-    return qw();
-}
-
-
-=head2 get_self
-
-This is a helper method used by the test suite to fetch a feed's local state.
-It isn't used in production.
-
-=cut
-
-sub get_self {
-    my $pkg = shift;
-    return $objects_by_package{$pkg};
 }
 
 1;

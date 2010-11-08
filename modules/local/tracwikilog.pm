@@ -53,15 +53,6 @@ sub process_feed {
     $lastrev = $date;
 }
 
-sub longest_common_prefix {
-    my $prefix = shift;
-    for (@_) {
-        chop $prefix while (! /^\Q$prefix\E/);
-    }
-    return $prefix;
-}
-
-
 sub output_item {
     my $item = shift;
     my $creator = $item->creator;
