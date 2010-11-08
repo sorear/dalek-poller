@@ -59,7 +59,7 @@ sub send_privmsg {
     print QUEUE "$net $to $msg\n";
 }
 
-my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed adhoc tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /;
+my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed tpfwikilog tracwikilog websitelog parrotlog parrotticketlog /;
 for my $mod (@modules) {
     $mod = "modules::local::$mod";
     eval "require $mod;"; die $@ if $@; $mod->init;

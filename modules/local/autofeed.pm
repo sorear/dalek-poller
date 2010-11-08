@@ -65,6 +65,7 @@ respectively.  This is the top level timer callback function.
 
 sub fetch_metadata {
     my $package = shift;
+    $package->adhoc();
     $package->parse_pages();
     $package->scrape_pages();
 }
@@ -169,6 +170,89 @@ sub scrape_pages {
     }
 }
 
+
+sub adhoc {
+    my $self = shift;
+    $self->try_link(
+        'https://github.com/masak/yapsi',
+        ['freenode', '#perl6'],
+    );
+    $self->try_link(
+        'https://github.com/ekiru/tree-optimization',
+        ['magnet', '#parrot'],
+    );
+    $self->try_link(
+        'http://code.google.com/p/csmeta/',
+        ['freenode', '#perl6'],
+    );
+    $self->try_link(
+        'http://gitorious.org/parrot-plumage/parrot-plumage');
+    $self->try_link(
+        'http://code.google.com/p/java2perl6/',
+        ['freenode', '#dbdi']
+    );
+    $self->try_link(
+        'https://github.com/jnthn/6model',
+        ['freenode', '#perl6'],
+    );
+    $self->try_link(
+        'https://github.com/hinrik/grok/',
+        ['freenode', '#perl6']
+    );
+    $self->try_link(
+        'https://github.com/cardinal/cardinal/',
+        ['magnet', '#cardinal']
+    );
+    $self->try_link(
+        'https://github.com/sorear/niecza',
+        ['freenode', '#perl6'],
+    );
+    $self->try_link(
+        'https://github.com/perl6/book',
+        ['freenode', '#perl6']
+    );
+    $self->try_link(
+        'https://github.com/perl6/book',
+        ['freenode', '#perl6book']
+    );
+    $self->try_link(
+        'https://github.com/viklund/november',
+        ['freenode', '#november-wiki']
+    );
+    $self->try_link(
+        'https://github.com/viklund/november',
+        ['freenode', '#perl6']
+    );
+    $self->try_link(
+        'https://github.com/rakudo/rakudo',
+        ['freenode', '#perl6'],
+    );
+    $self->try_link(
+        'https://github.com/perl6/nqp-rx',
+    );
+    $self->try_link(
+        'https://github.com/perl6/nqp-rx',
+        ['freenode', '#perl6']
+    );
+    $self->try_link(
+        'https://github.com/rakudo/rakudo/tree/buf',
+        ['freenode', '#perl6'],
+    );
+    for my $url (qw{
+https://github.com/perl6/bench-scripts
+https://github.com/perl6/ecosystem
+https://github.com/perl6/evalbot
+https://github.com/perl6/misc
+https://github.com/perl6/modules
+https://github.com/perl6/mu
+https://github.com/perl6/perl6.org
+https://github.com/perl6/roast
+https://github.com/perl6/specs
+https://github.com/perl6/std
+            }) {
+        $self->try_link($url, ['freenode', '#perl6']);
+    }
+}
 
 =head2 try_link
 
