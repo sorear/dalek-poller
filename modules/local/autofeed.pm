@@ -63,11 +63,19 @@ respectively.  This is the top level timer callback function.
 
 =cut
 
+our @jsonout;
+
 sub fetch_metadata {
     my $package = shift;
+    @jsonout = ();
     $package->adhoc();
     $package->parse_pages();
     $package->scrape_pages();
+    open NEWJSON, ">new.json";
+    my $json = JSON->new->canonical(1)->space_after(1)->indent(1);
+    @jsonout = sort { $a->{url} cmp $b->{url} } @jsonout;
+    print NEWJSON $json->encode(\@jsonout);
+    close NEWJSON;
 }
 
 
@@ -122,9 +130,7 @@ sub parse_pages {
             next unless defined $url;
             next unless scalar @$channels;
             next unless scalar $branches;
-            foreach my $channel (@$channels) {
-                $package->try_link($url, $channel, $branches);
-            }
+            $package->try_link($url, $channels, $branches);
         }
     }
 }
@@ -175,68 +181,68 @@ sub adhoc {
     my $self = shift;
     $self->try_link(
         'https://github.com/masak/yapsi',
-        ['freenode', '#perl6'],
+        [['freenode', '#perl6']],
     );
     $self->try_link(
         'https://github.com/ekiru/tree-optimization',
-        ['magnet', '#parrot'],
+        [['magnet', '#parrot']],
     );
     $self->try_link(
         'http://code.google.com/p/csmeta/',
-        ['freenode', '#perl6'],
+        [['freenode', '#perl6']],
     );
     $self->try_link(
         'http://gitorious.org/parrot-plumage/parrot-plumage');
     $self->try_link(
         'http://code.google.com/p/java2perl6/',
-        ['freenode', '#dbdi']
+        [['freenode', '#dbdi']]
     );
     $self->try_link(
         'https://github.com/jnthn/6model',
-        ['freenode', '#perl6'],
+        [['freenode', '#perl6']],
     );
     $self->try_link(
         'https://github.com/hinrik/grok/',
-        ['freenode', '#perl6']
+        [['freenode', '#perl6']]
     );
     $self->try_link(
         'https://github.com/cardinal/cardinal/',
-        ['magnet', '#cardinal']
+        [['magnet', '#cardinal']]
     );
     $self->try_link(
         'https://github.com/sorear/niecza',
-        ['freenode', '#perl6'],
+        [['freenode', '#perl6']],
     );
     $self->try_link(
         'https://github.com/perl6/book',
-        ['freenode', '#perl6']
+        [['freenode', '#perl6']]
     );
     $self->try_link(
         'https://github.com/perl6/book',
-        ['freenode', '#perl6book']
+        [['freenode', '#perl6book']]
     );
     $self->try_link(
         'https://github.com/viklund/november',
-        ['freenode', '#november-wiki']
+        [['freenode', '#november-wiki']]
     );
     $self->try_link(
         'https://github.com/viklund/november',
-        ['freenode', '#perl6']
+        [['freenode', '#perl6']]
     );
     $self->try_link(
         'https://github.com/rakudo/rakudo',
-        ['freenode', '#perl6'],
+        [['freenode', '#perl6']],
     );
     $self->try_link(
         'https://github.com/perl6/nqp-rx',
     );
     $self->try_link(
         'https://github.com/perl6/nqp-rx',
-        ['freenode', '#perl6']
+        [['freenode', '#perl6']]
     );
     $self->try_link(
         'https://github.com/rakudo/rakudo/tree/buf',
-        ['freenode', '#perl6'],
+        [['freenode', '#perl6']],
     );
     for my $url (qw{
 https://github.com/perl6/bench-scripts
@@ -250,7 +256,7 @@ https://github.com/perl6/roast
 https://github.com/perl6/specs
 https://github.com/perl6/std
             }) {
-        $self->try_link($url, ['freenode', '#perl6']);
+        $self->try_link($url, [['freenode', '#perl6']]);
     }
 }
 
@@ -266,11 +272,18 @@ at present.  The field is ignored for other targets.)
 =cut
 
 sub try_link {
-    my ($package, $url, $target, $branches) = @_;
-    return modules::local::githubparser->try_link($url, $target, $branches) if $url =~ /github/;
-    # "branches" argument not currently supported for gitorious and googlecode.
-    return modules::local::gitoriousparser->try_link($url, $target) if $url =~ /gitorious/;
-    return modules::local::googlecodeparser->try_link($url, $target) if $url =~ /google/;
+    my ($package, $url, $targets, $branches) = @_;
+    my ($backend) = $url =~ /(github|gitorious|google)/;
+    return unless $backend;
+    $url =~ s|http://github|https://github|;
+    $backend = "googlecode" if $backend eq "google";
+    $backend = "modules::local::" . $backend . "parser";
+    $targets //= [[ "magnet", "#parrot" ]];
+    $branches //= ["master"];
+
+    push @jsonout, { branches => $branches, channels => $targets, url => $url };
+
+    $backend->try_link($url, $_, $branches) for @$targets;
 }
 
 1;
