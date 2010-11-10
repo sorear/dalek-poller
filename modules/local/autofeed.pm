@@ -109,7 +109,12 @@ sub fetch_feed {
     for my $pkg (sort keys %feeds) {
         for my $feedid (sort keys %{ $feeds{$pkg} }) {
             main::lprint("autofeed ($pkg - $feedid): fetching");
-            $pkg->process_feed($feedid, $feeds{$pkg}{$feedid});
+            eval {
+                $pkg->process_feed($feedid, $feeds{$pkg}{$feedid});
+            };
+            if ($@) {
+                main::lprint("* * * $@");
+            }
         }
     }
 }
