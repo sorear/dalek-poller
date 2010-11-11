@@ -61,7 +61,7 @@ my $app = sub {
             rev => substr($commit->{id}, 0, 7),
             prefix => $prefix,
             log => \@lines,
-            link => "https://github.com" . $commit->{url}
+            link => $commit->{url}
         );
     }
 
