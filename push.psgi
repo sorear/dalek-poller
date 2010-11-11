@@ -16,7 +16,7 @@ use constant NOT_FOUND => [
     [ 'No handler']
 ];
 
-use constant IGNORE => [
+use constant OK => [
     200,
     [ 'Content-Type' => 'text/plain' ],
     [ 'OK' ]
@@ -35,7 +35,7 @@ my $app = sub {
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
         split '\+', $req->param('t');
 
-    return IGNORE if $blob->{ref} !~ m#^refs/heads/(.*)#;
+    return OK if $blob->{ref} !~ m#^refs/heads/(.*)#;
 
     my $project = $blob->{repository}{name};
 
@@ -73,4 +73,6 @@ my $app = sub {
             link    => $commit->{url}
         );
     }
+
+    OK;
 };
