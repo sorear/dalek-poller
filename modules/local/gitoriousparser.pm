@@ -39,10 +39,10 @@ sub process_feed {
     foreach my $item (@items) {
         my @revs = $item->content->body =~ m|/commit/([a-z0-9]{40})|g;
         for my $rev (reverse @revs) {
-            ::try_item($self, $project, $targets, $rev, $item);
+            common::try_item($self, $project, $targets, $rev, $item);
         }
     }
-    ::mark_feed_started(__PACKAGE__, $project);
+    common::mark_feed_started(__PACKAGE__, $project);
 }
 
 =head2 parse_url
@@ -68,7 +68,7 @@ sub parse_url {
         $project = $1;
     } else {
         # whatever it is, we can't handle it.  Log and return.
-        main::lprint("gitorious try_link(): I can't handle $url");
+        common::lprint("gitorious try_link(): I can't handle $url");
         return;
     }
 
@@ -127,7 +127,7 @@ sub format_item {
         $link = "http://gitorious.org$link"
             unless $link =~ m,^https?://,;
 
-        my $patch = ::fetch_url("$link.patch");
+        my $patch = common::fetch_url("$link.patch");
         my (@tmp, @log, @files, $this);
         @tmp = split(/\n+/, $patch);
         while(defined($this = shift(@tmp))) {
@@ -152,7 +152,7 @@ sub format_item {
             $this = shift(@tmp);
         }
 
-        my $prefix =  ::longest_common_prefix(@files);
+        my $prefix =  common::longest_common_prefix(@files);
         $prefix //= '/';
         $prefix =~ s|^/||;      # cut off the leading slash
         if(scalar @files > 1) {
@@ -161,7 +161,7 @@ sub format_item {
 
         $commit = substr($commit, 0, 7);
 
-        main::lprint("$project: output_item: output rev $commit");
+        common::lprint("$project: output_item: output rev $commit");
         push @out, @{ $self->format_karma_message(
             feed    => $project,
             rev     => $commit,

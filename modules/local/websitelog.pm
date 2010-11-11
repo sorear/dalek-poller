@@ -14,7 +14,7 @@ sub numify_ts {
 }
 
 sub fetch_feed {
-    my $response = ::fetch_url($url);
+    my $response = common::fetch_url($url);
     if (defined $response) {
         my $rss = XML::RAI->parse_string($response);
         process_rss($rss);
@@ -53,7 +53,7 @@ sub output_item {
 
 sub put {
     my $line = shift;
-    main::send_privmsg("magnet", "#parrot", $line);
+    common::send_privmsg("magnet", "#parrot", $line);
 }
 
 1;

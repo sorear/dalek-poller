@@ -73,7 +73,7 @@ sub fetch_metadata {
     %feeds = ();
 
     foreach my $link (@json) {
-        my $content = ::fetch_url($link);
+        my $content = common::fetch_url($link);
         next unless defined $content;
         my $json;
         eval { $json = decode_json($content); };
@@ -100,7 +100,7 @@ sub add_target {
     }
 
     push @{$feeds{$pkg}{$feedid}}, $target;
-    main::lprint("autofeed ($pkg): $feedid will output to ".join("/",@$target));
+    common::lprint("autofeed ($pkg): $feedid will output to ".join("/",@$target));
 }
 
 sub fetch_feed {
@@ -108,12 +108,12 @@ sub fetch_feed {
 
     for my $pkg (sort keys %feeds) {
         for my $feedid (sort keys %{ $feeds{$pkg} }) {
-            main::lprint("autofeed ($pkg - $feedid): fetching");
+            common::lprint("autofeed ($pkg - $feedid): fetching");
             eval {
                 $pkg->process_feed($feedid, $feeds{$pkg}{$feedid});
             };
             if ($@) {
-                main::lprint("* * * $@");
+                common::lprint("* * * $@");
             }
         }
     }

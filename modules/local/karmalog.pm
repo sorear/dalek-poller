@@ -39,7 +39,7 @@ Called by the core. Grab the CREDITS file, call parse_credits() with the result.
 
 sub fetch_metadata {
     my $package = shift;
-    my $credits = ::fetch_url($url);
+    my $credits = common::fetch_url($url);
     $package->parse_credits($credits) if defined $credits;
 }
 
@@ -98,7 +98,7 @@ sub parse_credits {
             }
         }
     }
-    main::lprint("karmalog: aliases file parsed, " . scalar(keys %newaliases) . " aliases total");
+    common::lprint("karmalog: aliases file parsed, " . scalar(keys %newaliases) . " aliases total");
     %aliases = %newaliases;
 }
 
@@ -128,7 +128,7 @@ feedname: review: http://link/to/googlecode/diff/page
 
 sub emit_karma_message {
     my ($self, %args) = @_;
-    ::put($args{targets}, @{ $self->format_karma_message(%args) });
+    common::put($args{targets}, @{ $self->format_karma_message(%args) });
 }
 
 sub format_karma_message {
@@ -171,7 +171,7 @@ TT #699 closed by jkeenan++: manifest_tests Makefile target does not work in rel
 
 sub emit_ticket_karma {
     my ($self, %args) = @_;
-    ::put($args{targets}, @{ $self->format_ticket_karma(%args) });
+    common::put($args{targets}, @{ $self->format_ticket_karma(%args) });
 }
 
 sub format_ticket_karma {

@@ -41,9 +41,9 @@ sub process_feed {
 
     foreach my $item (@items) {
         my ($rev)   = $item->link->href =~ m|\?r=([0-9]+)|;
-        ::try_item($self, $project, $targets, $rev, $item);
+        common::try_item($self, $project, $targets, $rev, $item);
     }
-    ::mark_feed_started(__PACKAGE__, $project);
+    common::mark_feed_started(__PACKAGE__, $project);
 }
 
 =head2 try_link
@@ -72,7 +72,7 @@ sub parse_url {
         $projectname = $1;
     } else {
         # whatever it is, we can't handle it.  Log and return.
-        main::lprint("googlecode try_link(): I can't handle $url");
+        common::lprint("googlecode try_link(): I can't handle $url");
         return;
     }
 
@@ -130,7 +130,7 @@ sub format_item {
     $log = join("\n", @lines);
     $log =~ s/^\s+//;
 
-    $prefix =  ::longest_common_prefix(@files);
+    $prefix =  common::longest_common_prefix(@files);
     $prefix =~ s|^/||;      # cut off the leading slash
     if(scalar @files > 1) {
         $prefix .= " (" . scalar(@files) . " files)";
@@ -140,7 +140,7 @@ sub format_item {
     decode_entities($log);
     my @log_lines = split(/[\r\n]+/, $log);
 
-    main::lprint("$feedid: output_item: output rev $rev");
+    common::lprint("$feedid: output_item: output rev $rev");
     $self->format_karma_message(
         feed    => $feedid,
         rev     => "r$rev",

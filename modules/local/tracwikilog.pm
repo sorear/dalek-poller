@@ -10,7 +10,7 @@ my $url  = 'https://trac.parrot.org/parrot/timeline?wiki=on&format=rss';
 my $lastrev;
 
 sub fetch_feed {
-    my $response = ::fetch_url($url);
+    my $response = common::fetch_url($url);
     if (defined $response) {
         my $feed = XML::RAI->parse_string($response);
         process_feed($feed);
@@ -45,10 +45,10 @@ sub output_item {
     my ($page)  = $link =~ m|/parrot/wiki/(.+)\?version=|;
 
     if(defined($rev)) {
-        main::lprint("tracwikilog: output_item: output $page rev $rev");
+        common::lprint("tracwikilog: output_item: output $page rev $rev");
         put("tracwiki: v$rev | $creator++ | $page");
     } else {
-        main::lprint("tracwikilog: output_item: output unversioned item");
+        common::lprint("tracwikilog: output_item: output unversioned item");
         # unversioned update, just output the title as-is.
         my $title = $item->title;
         put("tracwiki: $creator++ | $title");
@@ -62,7 +62,7 @@ sub output_item {
 
 sub put {
     my $line = shift;
-    main::send_privmsg("magnet", "#parrot", $line);
+    common::send_privmsg("magnet", "#parrot", $line);
 }
 
 1;

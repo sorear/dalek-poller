@@ -14,7 +14,7 @@ my $url  = 'https://trac.parrot.org/parrot/timeline?ticket=on&format=rss';
 my $lastrev;
 
 sub fetch_feed {
-    my $response = ::fetch_url($url);
+    my $response = common::fetch_url($url);
     if (defined $response) {
         my $feed = XML::RAI->parse_string($response);
         process_feed($feed);
@@ -29,9 +29,9 @@ sub process_feed {
     # skip the first run, to prevent new installs from flooding the channel
     foreach my $item (@items) {
         my $rev = $item->identifier;
-        ::try_item(__PACKAGE__, "", [["magnet", "#parrot"]], $rev, $item);
+        common::try_item(__PACKAGE__, "", [["magnet", "#parrot"]], $rev, $item);
     }
-    ::mark_feed_started(__PACKAGE__, "");
+    common::mark_feed_started(__PACKAGE__, "");
 }
 
 
@@ -45,7 +45,7 @@ sub format_item {
     decode_entities($desc);
     if($desc =~ /^Ticket \#(\d+) \((.+)\) (\S+)\s*$/) {
         my ($ticket, $summary, $action) = ($1, $2, $3);
-        main::lprint("parrotticketlog: ticket $ticket $action");
+        common::lprint("parrotticketlog: ticket $ticket $action");
         return $self->format_ticket_karma(
             prefix  => 'TT #',
             ticket  => $ticket,
@@ -55,7 +55,7 @@ sub format_item {
             url => "http://trac.parrot.org/parrot/ticket/$ticket"
         );
     } else {
-        main::lprint("parrotticketlog: regex failed on $desc");
+        common::lprint("parrotticketlog: regex failed on $desc");
         return [];
     }
 }

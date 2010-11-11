@@ -37,10 +37,10 @@ sub process_feed {
     my $feed = get_yaml($url);
 
     if(!defined($feed)) {
-        ::lprint("could not fetch $feedid feed $url");
+        common::lprint("could not fetch $feedid feed $url");
         return;
     }
-    ::lprint("fetching branch $feedid feed $url");
+    common::lprint("fetching branch $feedid feed $url");
 
     my @items = @{$$feed{commits}};
     @items = sort { $$a{committed_date} cmp $$b{committed_date} } @items; # ascending order
@@ -48,9 +48,9 @@ sub process_feed {
     my $latest = $$newest{committed_date};
 
     foreach my $item (@items) {
-        ::try_item($self, $feedid, $targets, $$item{id}, $item);
+        common::try_item($self, $feedid, $targets, $$item{id}, $item);
     }
-    ::mark_feed_started(__PACKAGE__, $feedid);
+    common::mark_feed_started(__PACKAGE__, $feedid);
 }
 
 =head2 try_link
@@ -88,7 +88,7 @@ sub parse_url {
         $project = $2;
     } else {
         # whatever it is, we can't handle it.  Log and return.
-        main::lprint("github try_link(): I can't handle $url");
+        common::lprint("github try_link(): I can't handle $url");
         return;
     }
 
@@ -135,7 +135,7 @@ sub format_item {
         @files = map { $$_{filename} } (@{$$commit{modified}});
         @files = (@files, @{$$commit{added}})   if exists $$commit{added};
         @files = (@files, @{$$commit{removed}}) if exists $$commit{removed};
-        $prefix = ::longest_common_prefix(@files);
+        $prefix = common::longest_common_prefix(@files);
         if(defined($prefix) && length($prefix)) {
             # cut off the leading slash.
             $prefix =~ s|^/||;
@@ -173,7 +173,7 @@ undef on error.
 
 sub get_yaml {
     my $url = shift;
-    my $response = ::fetch_url($url);
+    my $response = common::fetch_url($url);
     if (defined $response) {
         my $rv = Load($response);
         return $rv;
