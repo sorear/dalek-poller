@@ -22,7 +22,7 @@ my $app = sub {
 
     my $blob = decode_json $req->param('payload');
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
-        $req->param('t');
+        split ' ', $req->param('t');
 
     if ($blob->{ref} !~ m#^refs/heads/(.*)#) {
         goto ignore;
