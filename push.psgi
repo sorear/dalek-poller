@@ -10,13 +10,24 @@ use Plack::Request;
 use common;
 use modules::local::karmalog;
 
+use constant NOT_FOUND => [
+    404,
+    [ 'Content-Type' => 'text/plain' ],
+    [ 'No handler']
+];
+
+use constant IGNORE => [
+    200,
+    [ 'Content-Type' => 'text/plain' ],
+    [ 'OK' ]
+];
+
+
 my $app = sub {
     my $env = shift;
     my $req = Plack::Request->new($env);
 
-    if ($req->path_info ne '/dalek' || $req->method ne 'POST') {
-        return [ 404, [ 'Content-Type' => 'text/plain' ], [ 'No handler'] ];
-    }
+    return NOT_FOUND if $req->path_info ne '/dalek' || $req->method ne 'POST';
 
     modules::local::karmalog->fetch_metadata;
 
@@ -24,9 +35,7 @@ my $app = sub {
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
         split '\+', $req->param('t');
 
-    if ($blob->{ref} !~ m#^refs/heads/(.*)#) {
-        goto ignore;
-    }
+    return IGNORE if $blob->{ref} !~ m#^refs/heads/(.*)#;
 
     my $project = $blob->{repository}{name};
 
@@ -64,11 +73,4 @@ my $app = sub {
             link => $commit->{url}
         );
     }
-
-ignore:
-    return [
-        200,
-        [ 'Content-Type' => 'text/plain' ],
-        [ 'OK' ]
-    ];
 };
