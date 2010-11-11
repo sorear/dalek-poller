@@ -50,7 +50,7 @@ my $app = sub {
 
         my @files = @{ $commit->{modified} },
                     @{ $commit->{added} } // (),
-                    @{ $commit->{removed} } //();
+                    @{ $commit->{removed} } // ();
 
         my $prefix = common::longest_common_prefix(@files);
         if (defined($prefix) && length($prefix)) {
@@ -65,12 +65,12 @@ my $app = sub {
         }
         modules::local::karmalog->emit_karma_message(
             targets => \@tgt,
-            user => $commit->{author}{name},
-            feed => $project,
-            rev => substr($commit->{id}, 0, 7),
-            prefix => $prefix,
-            log => \@lines,
-            link => $commit->{url}
+            user    => $commit->{author}{name},
+            feed    => $project,
+            rev     => substr($commit->{id}, 0, 7),
+            prefix  => $prefix,
+            log     => \@lines,
+            link    => $commit->{url}
         );
     }
 };
