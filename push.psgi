@@ -20,7 +20,7 @@ my $app = sub {
 
     modules::local::karmalog->fetch_metadata;
 
-    my $blob = decode_json $req->raw_body;
+    my $blob = decode_json $req->param('payload');
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
         $req->param('t');
 
