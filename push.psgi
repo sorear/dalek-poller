@@ -48,9 +48,9 @@ my $app = sub {
         pop(@lines) if $lines[-1] =~ /^git-svn-id: http/;
         pop(@lines) while scalar(@lines) && $lines[-1] eq '';
 
-        my @files = @{ $commit->{modified} },
-                    @{ $commit->{added} // [] },
-                    @{ $commit->{removed} // [] };
+        my @files = (@{ $commit->{modified} },
+                     @{ $commit->{added} // [] },
+                     @{ $commit->{removed} // [] });
 
         my $prefix = common::longest_common_prefix(@files);
         if (defined($prefix) && length($prefix)) {
