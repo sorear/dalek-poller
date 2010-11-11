@@ -49,8 +49,8 @@ my $app = sub {
         pop(@lines) while scalar(@lines) && $lines[-1] eq '';
 
         my @files = @{ $commit->{modified} },
-                    @{ $commit->{added} } // (),
-                    @{ $commit->{removed} } // ();
+                    @{ $commit->{added} // [] },
+                    @{ $commit->{removed} // [] };
 
         my $prefix = common::longest_common_prefix(@files);
         if (defined($prefix) && length($prefix)) {
