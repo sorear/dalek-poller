@@ -53,14 +53,14 @@ my $app = sub {
         @files = (@files, @{$$commit{added}})   if exists $$commit{added};
         @files = (@files, @{$$commit{removed}}) if exists $$commit{removed};
         my $prefix = common::longest_common_prefix(@files);
-        if(defined($prefix) && length($prefix)) {
+        if (defined($prefix) && length($prefix)) {
             # cut off the leading slash.
             $prefix =~ s|^/||;
         } else {
             # add a leading slash, just to be different.
             $prefix = '/' unless(defined($prefix) && length($prefix));
         }
-        if(scalar @files > 1) {
+        if (scalar @files > 1) {
             $prefix .= " (" . scalar(@files) . " files)";
         }
         modules::local::karmalog->emit_karma_message(
