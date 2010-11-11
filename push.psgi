@@ -43,7 +43,7 @@ my $app = sub {
         $project = "$project/$1";
     }
 
-    for my $commit (reverse @{ $blob->{commits} }) {
+    for my $commit (@{ $blob->{commits} }) {
         my @lines = split("\n", $commit->{message} // 'unknown');
         pop(@lines) if $lines[-1] =~ /^git-svn-id: http/;
         pop(@lines) while scalar(@lines) && $lines[-1] eq '';
