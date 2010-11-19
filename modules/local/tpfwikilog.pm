@@ -3,18 +3,11 @@ use strict;
 use warnings;
 use XML::RAI;
 use HTML::Entities;
-#XML::RAI::Item->add_mapping('branch', qw(dc:branch));
 
-my $url     = 'http://www.perlfoundation.org/feed/workspace/parrot?category=Recent%20Changes';
-my $lastpost;
-
-sub numify_ts {
-    my ($ts) = shift;
-    $ts =~ s/[-T:\+]//g;
-    return $ts;
-}
+my $url     = 'http://www.perlfoundation.org/feed/workspace/perl6?category=Recent%20Changes';
 
 sub fetch_feed {
+    local $common::timeout = 30;
     my $response = common::fetch_url($url);
     if(defined $response) {
         my $rss = XML::RAI->parse_string($response);
@@ -26,36 +19,21 @@ sub process_feed {
     my $rss = shift;
     my @items = @{$rss->items};
     my $newest = $items[0];
-    $newest    = $items[-1] if exists $ENV{TEST_RSS_PARSER};
-    my $newestpost = numify_ts($newest->created);
-    #main::lprint("tpfwikilog: newepost is $newestpost");
-    my @newposts;
-    
-    # skip the first run, to prevent new installs from flooding the channel
-    if(defined($lastpost)) {
-        # output new entries to channel
-        foreach my $item (@items) {
-            my ($post) = numify_ts($item->created);
-	    last if $post <= $lastpost;
-	    unshift(@newposts,$item);
-        }
-        output_item($_) foreach (@newposts);
+    # output new entries to channel
+    foreach my $item (@items) {
+        common::try_item(__PACKAGE__, 'perl6', [['freenode', '#perl6']],
+            $item->created, $item);
     }
-    $lastpost = $newestpost;
+    common::mark_feed_started(__PACKAGE__, 'perl6');
 }
 
-sub output_item {
-    my $item = shift;
+sub format_item {
+    my ($pkg, $feedid, $commit, $item) = @_;
     my $creator = $item->creator;
     my $link    = $item->link;
     my $title   = $item->title;
-    put("tpfwiki: $creator | $title");
-    put("tpfwiki: $link");
-}
-
-sub put {
-    my $line = shift;
-    common::send_privmsg("magnet", "#parrot", $line);
+    [ "tpfwiki: $creator | $title",
+      "tpfwiki: $link" ];
 }
 
 1;
