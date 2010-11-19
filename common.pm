@@ -38,11 +38,12 @@ was encountered.
 =cut
 
 my $lwp = LWP::UserAgent->new();
-$lwp->timeout(10);
+our $timeout = 10;
 $lwp->env_proxy();
 
 sub fetch_url {
     my ($url) = @_;
+    $lwp->timeout($timeout);
     my $response = $lwp->get($url);
     if($response->is_success) {
         return $response->content;
