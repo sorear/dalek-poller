@@ -32,8 +32,7 @@ sub format_item {
     my $creator = $item->creator;
     my $link    = $item->link;
     my $title   = $item->title;
-    [ "tpfwiki: $creator | $title",
-      "tpfwiki: $link" ];
+    [ "tpfwiki: " . modules::local::karmalog->karmaize($creator) . " | $link" ]
 }
 
 1;

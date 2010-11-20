@@ -131,19 +131,25 @@ sub emit_karma_message {
     common::put($args{targets}, @{ $self->format_karma_message(%args) });
 }
 
+sub karmaize {
+    my ($self, $user) = @_;
+    return "unknown" unless defined $user;
+    $user = $aliases{$user} if exists $aliases{$user};
+    $user = "($user)" if $user =~ / /;
+    return "$user++";
+}
+
 sub format_karma_message {
     my ($self, %args) = @_;
     my $user = $args{user};
     my $feed = $args{feed};
     my $rev  = $args{rev};
     my $end  = $args{prefix};
-    $user = "unknown" unless defined $user;
-    $user = $aliases{$user} if exists $aliases{$user};
-    $user = "($user)" if $user =~ / /;
+    my $karma = $self->karmaize($user);
     $end  = "/" unless defined $end;
     $end .= ':' if(defined($args{log}) || defined($args{link}));
     my @put;
-    push @put, "$rev | $user++ | $end";
+    push @put, "$rev | $karma | $end";
     push @put, @{ $args{log} // [] };
     push @put, "review: " . $args{link} if defined $args{link};
     return [ map { "$feed: $_" } @put ];
