@@ -22,20 +22,16 @@ use constant OK => [
     [ 'OK' ]
 ];
 
-
-my $app = sub {
-    my $env = shift;
-    my $req = Plack::Request->new($env);
-
-    return NOT_FOUND if $req->path_info ne '/dalek' || $req->method ne 'POST';
+sub report {
+    my ($bits, $tgt) = @_;
 
     modules::local::karmalog->fetch_metadata;
 
-    my $blob = decode_json $req->param('payload');
+    my $blob = decode_json $bits;
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
-        split '\+', $req->param('t');
+        split '\+', $tgt;
 
-    return OK if $blob->{ref} !~ m#^refs/heads/(.*)#;
+    return if $blob->{ref} !~ m#^refs/heads/(.*)#;
 
     my $project = $blob->{repository}{name};
 
@@ -73,6 +69,24 @@ my $app = sub {
             link    => $commit->{url}
         );
     }
+}
 
-    OK;
+my $app = sub {
+    my $env = shift;
+    my $req = Plack::Request->new($env);
+
+    return NOT_FOUND if $req->path_info ne '/dalek' || $req->method ne 'POST';
+
+    my $bits = $req->param('payload');
+    my $tgt  = $req->param('t');
+
+    eval {
+        open PACKET, ">packet." . time() . "." . $tgt;
+        print PACKET $bits;
+        close PACKET;
+    };
+
+    report($bits, $tgt);
+
+    return OK;
 };
