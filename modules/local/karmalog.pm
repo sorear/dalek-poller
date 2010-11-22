@@ -148,10 +148,14 @@ sub format_karma_message {
     my $karma = $self->karmaize($user);
     $end  = "/" unless defined $end;
     $end .= ':' if(defined($args{log}) || defined($args{link}));
+    my $link = $args{link};
+    if (defined $link && $link =~ m|github.*commit/[0-9a-f]{40}$|) {
+        $link = substr($link, 0, length($link)-30);
+    }
     my @put;
     push @put, "$rev | $karma | $end";
     push @put, @{ $args{log} // [] };
-    push @put, "review: " . $args{link} if defined $args{link};
+    push @put, "review: " . $link if defined $link;
     return [ map { "$feed: $_" } @put ];
 }
 
