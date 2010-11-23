@@ -28,8 +28,14 @@ sub report {
     modules::local::karmalog->fetch_metadata;
 
     my $blob = decode_json $bits;
+
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
         split '\+', $tgt;
+
+    if (@{ $blob->{commits} } > 15) {
+        common::put(\@tgt, "Some '" . $blob->{pusher}{name} ."' person just gave me a " . length($bits) . " byte commit packet.  They need to be more careful in the future.");
+        return;
+    }
 
     return if $blob->{ref} !~ m#^refs/heads/(.*)#;
 
