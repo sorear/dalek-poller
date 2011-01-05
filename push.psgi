@@ -2,6 +2,7 @@
 use 5.010;
 use JSON;
 use YAML;
+use Encode;
 use strict;
 use warnings;
 
@@ -64,6 +65,10 @@ sub report {
         }
         if (scalar @files > 1) {
             $prefix .= " (" . scalar(@files) . " files)";
+        }
+        # JSON lives in the world of characters, sadly, karmalog doesn't
+        for ($commit->{author}{name}, $project, @lines) {
+            $_ = Encode::encode_utf8($_);
         }
         modules::local::karmalog->emit_karma_message(
             targets => \@tgt,
