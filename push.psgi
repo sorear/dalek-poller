@@ -32,17 +32,17 @@ sub report {
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
         split '\+', $tgt;
 
-    if (@{ $blob->{commits} } > 15) {
-        common::put(\@tgt, "Some '" . $blob->{pusher}{name} ."' person just gave me a " . length($bits) . " byte commit packet.  They need to be more careful in the future.");
-        return;
-    }
-
     return if $blob->{ref} !~ m#^refs/heads/(.*)#;
 
     my $project = $blob->{repository}{name};
 
     if ($1 ne 'master') {
         $project = "$project/$1";
+    }
+
+    if (@{ $blob->{commits} } > 15) {
+        common::put(\@tgt, "Heuristic branch merge: pushed " . @{ $blob->{commits} } . " commits to $project by " . $blob->{pusher}{name});
+        return;
     }
 
     for my $commit (@{ $blob->{commits} }) {
