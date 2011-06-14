@@ -31,7 +31,7 @@ sub report {
     my $blob = decode_json $bits;
 
     my @tgt = map { my ($a,$b) = split ',', $_; [ $a, "#$b" ] }
-        split '\+', $tgt;
+        split ' ', $tgt;
 
     return if $blob->{ref} !~ m#^refs/heads/(.*)#;
 
@@ -86,7 +86,7 @@ my $app = sub {
     my $env = shift;
     my $req = Plack::Request->new($env);
 
-    return NOT_FOUND if $req->path_info ne '/dalek' || $req->method ne 'POST';
+    return NOT_FOUND if $req->path_info !~ m#^/dalek# || $req->method ne 'POST';
 
     my $bits = $req->param('payload');
     my $tgt  = $req->param('t');
