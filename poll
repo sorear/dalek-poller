@@ -5,7 +5,7 @@ use strict;
 
 use common;
 
-my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed tpfwikilog tracwikilog websitelog parrotticketlog /;
+my @modules = qw/ karmalog githubparser gitoriousparser googlecodeparser autofeed tracwikilog websitelog parrotticketlog /;
 for my $mod (@modules) {
     $mod = "modules::local::$mod";
     eval "require $mod;"; die $@ if $@;
