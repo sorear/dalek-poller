@@ -70,7 +70,7 @@ sub parse_credits {
     my @entries = $this;
 
     # parse the file into field structures
-    while($line !~ /=cut/) {
+    while(@content) {
         # simple state machine.
         $line = shift(@content);
         if($line =~ /^([A-Z]):\s+(.+)/) {
